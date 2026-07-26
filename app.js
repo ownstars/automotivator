@@ -190,11 +190,29 @@
     if (canvas.width !== posterW) canvas.width = posterW; // font measure needs a ctx
     ctx.letterSpacing = "0.03em";
     const midFor = (s) => `small-caps bold ${s}px ${family}`;
-    const bigFor = (s) => `bold ${Math.round(s * 1.4)}px ${family}`;
     const splitTitle = () =>
       title.length <= 1
         ? [title, "", ""]
         : [title[0], title.slice(1, -1), title[title.length - 1]];
+    // The title block shares one top and one bottom edge: mid letters are
+    // top-aligned with the enlarged first/last letters, the rule sits just
+    // below the mid letters, and its bottom meets the big letters'
+    // baseline. That fixes the big-letter scale: big cap height must equal
+    // mid cap height + rule gap + rule thickness.
+    const RULE_GAP_F = 0.06;
+    const RULE_H_F = 0.035;
+    let bigScale = 1.2;
+    if (title) {
+      const [first0, mid0] = splitTitle();
+      ctx.font = midFor(100);
+      const midRef = mid0 ? ctx.measureText(mid0).actualBoundingBoxAscent : 0;
+      ctx.font = `bold 100px ${family}`;
+      const bigRef = ctx.measureText(first0.toUpperCase()).actualBoundingBoxAscent;
+      if (midRef && bigRef) {
+        bigScale = (midRef + (RULE_GAP_F + RULE_H_F) * 100) / bigRef;
+      }
+    }
+    const bigFor = (s) => `bold ${Math.round(s * bigScale)}px ${family}`;
     const measureTitle = (s) => {
       const [first, mid, last] = splitTitle();
       ctx.font = bigFor(s);
@@ -211,10 +229,10 @@
       titleSize = Math.max(minSize, Math.min(titleSize, Math.round(posterW / 6)));
       while (titleSize > minSize && measureTitle(titleSize).total > imgMaxW) titleSize -= 2;
     }
-    // measured cap heights, so every letter shares one top line and the
-    // rule bottom meets the big letters' baseline exactly
-    let bigAsc = 0;
+    const ruleGap = Math.round(titleSize * RULE_GAP_F);
+    const ruleH = Math.max(2, Math.round(titleSize * RULE_H_F));
     let midAsc = 0;
+    let bigAsc = 0;
     if (titleSize) {
       const [first, mid] = splitTitle();
       ctx.font = bigFor(titleSize);
@@ -224,6 +242,7 @@
         midAsc = Math.ceil(ctx.measureText(mid).actualBoundingBoxAscent);
       }
     }
+    const titleBlockH = titleSize ? (midAsc ? midAsc + ruleGap + ruleH : bigAsc) : 0;
 
     // subtitle wrapping (small-caps with wide tracking)
     const subSize = Math.max(13, Math.round(posterW / 38));
@@ -234,13 +253,11 @@
 
     // vertical layout
     const gapImgTitle = Math.round(posterW * 0.02);
-    const ruleH = Math.max(2, Math.round(posterW / 320));
-    const ruleGap = Math.max(2, Math.round(titleSize * 0.05));
     const gapTitleSub = Math.round(posterW * 0.022);
     const padBottom = Math.round(posterW * 0.045);
 
     let textBlockH = 0;
-    if (titleSize) textBlockH += bigAsc;
+    if (titleSize) textBlockH += titleBlockH;
     if (subLines.length) {
       if (titleSize) textBlockH += gapTitleSub;
       textBlockH += subLines.length * subLineH;
@@ -288,14 +305,13 @@
       );
     }
 
-    // title: mid letters top-aligned with the enlarged first/last letters,
-    // underline tucked just beneath the mid letters, and the big letters
-    // reaching below it — like the original posters
+    // title: shared top edge for all letters, rule snug under the mid
+    // letters, rule bottom on the big letters' baseline — one rectangle
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
     let cursorY = imgY + imgH + gapImgTitle;
     if (titleSize) {
-      const bottomY = cursorY + bigAsc;
+      const bottomY = cursorY + titleBlockH;
       ctx.letterSpacing = "0.03em";
       ctx.fillStyle = titleColor.value;
       const [first, mid, last] = splitTitle();
@@ -305,15 +321,12 @@
       ctx.font = bigFor(titleSize);
       ctx.fillText(first.toUpperCase(), startX, bottomY);
       if (last) ctx.fillText(last.toUpperCase(), startX + wF + wM, bottomY);
-      const midBase = bottomY - bigAsc + midAsc;
       if (mid) {
         ctx.font = midFor(titleSize);
-        ctx.fillText(mid, startX + wF, midBase);
+        ctx.fillText(mid, startX + wF, cursorY + midAsc);
+        ctx.fillRect(Math.round(startX + wF), cursorY + midAsc + ruleGap, Math.round(wM), ruleH);
       }
       ctx.textAlign = "center";
-      if (wM > 0) {
-        ctx.fillRect(Math.round(startX + wF), midBase + ruleGap, Math.round(wM), ruleH);
-      }
       cursorY = bottomY;
     }
 
