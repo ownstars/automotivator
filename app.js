@@ -158,16 +158,6 @@
     return lines;
   }
 
-  function fitFontSize(text, fontFor, targetSize, minSize, maxWidth) {
-    let size = targetSize;
-    while (size > minSize) {
-      ctx.font = fontFor(size);
-      if (ctx.measureText(text).width <= maxWidth) break;
-      size -= 2;
-    }
-    return size;
-  }
-
   // ---------- poster rendering ----------
 
   function render() {
@@ -194,18 +184,34 @@
     }
 
     // title sizing: bold small-caps scaled to span ~78% of the poster width,
-    // like the classic posters, clamped so short titles don't become huge
+    // like the classic posters, clamped so short titles don't become huge.
+    // The first and last letters render larger and dropped below the
+    // baseline, flanking the underline rule.
     if (canvas.width !== posterW) canvas.width = posterW; // font measure needs a ctx
     ctx.letterSpacing = "0.03em";
-    const titleFor = (s) => `small-caps bold ${s}px ${family}`;
+    const midFor = (s) => `small-caps bold ${s}px ${family}`;
+    const bigFor = (s) => `bold ${Math.round(s * 1.3)}px ${family}`;
+    const splitTitle = () =>
+      title.length <= 1
+        ? [title, "", ""]
+        : [title[0], title.slice(1, -1), title[title.length - 1]];
+    const measureTitle = (s) => {
+      const [first, mid, last] = splitTitle();
+      ctx.font = bigFor(s);
+      const wF = ctx.measureText(first.toUpperCase()).width;
+      const wL = last ? ctx.measureText(last.toUpperCase()).width : 0;
+      ctx.font = midFor(s);
+      const wM = mid ? ctx.measureText(mid).width : 0;
+      return { wF, wM, wL, total: wF + wM + wL };
+    };
     let titleSize = 0;
     if (title) {
-      ctx.font = titleFor(100);
-      const widthAt100 = ctx.measureText(title).width;
-      titleSize = Math.round((posterW * 0.78) / widthAt100 * 100);
-      titleSize = Math.max(Math.round(posterW / 26), Math.min(titleSize, Math.round(posterW / 6)));
-      titleSize = fitFontSize(title, titleFor, titleSize, Math.round(posterW / 26), imgMaxW);
+      const minSize = Math.round(posterW / 26);
+      titleSize = Math.round(((posterW * 0.78) / measureTitle(100).total) * 100);
+      titleSize = Math.max(minSize, Math.min(titleSize, Math.round(posterW / 6)));
+      while (titleSize > minSize && measureTitle(titleSize).total > imgMaxW) titleSize -= 2;
     }
+    const titleDrop = Math.round(titleSize * 0.16);
 
     // subtitle wrapping (small-caps with wide tracking)
     const subSize = Math.max(13, Math.round(posterW / 38));
@@ -222,7 +228,7 @@
     const padBottom = Math.round(posterW * 0.045);
 
     let textBlockH = 0;
-    if (titleSize) textBlockH += titleSize + ruleGap + ruleH;
+    if (titleSize) textBlockH += titleSize + Math.max(ruleGap + ruleH, titleDrop);
     if (subLines.length) {
       if (titleSize) textBlockH += gapTitleSub;
       textBlockH += subLines.length * subLineH;
@@ -270,30 +276,34 @@
       );
     }
 
-    // title with underline rule, both in the title color
+    // title: enlarged first/last letters dropped below the baseline,
+    // underline rule tucked between them, all in the title color
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
     let cursorY = imgY + imgH + gapImgTitle;
     if (titleSize) {
       cursorY += titleSize;
       ctx.letterSpacing = "0.03em";
-      ctx.font = titleFor(titleSize);
       ctx.fillStyle = titleColor.value;
-      // letter-spacing trails the last glyph; nudge left by half to re-center
-      const trail = titleSize * 0.015;
-      ctx.fillText(title, posterW / 2 - trail, cursorY);
-      // underline runs under the title but stops short of the
-      // first and last letters, like the classic posters
-      const fullW = Math.min(ctx.measureText(title).width, imgMaxW);
-      const firstW = ctx.measureText(title[0]).width;
-      const lastW = ctx.measureText(title[title.length - 1]).width;
-      const ruleW = fullW - firstW - lastW;
-      cursorY += ruleGap;
-      if (ruleW > 0) {
-        const ruleX = posterW / 2 - trail - fullW / 2 + firstW;
-        ctx.fillRect(Math.round(ruleX), cursorY, Math.round(ruleW), ruleH);
+      const [first, mid, last] = splitTitle();
+      const { wF, wM, wL, total } = measureTitle(titleSize);
+      ctx.textAlign = "left";
+      const startX = (posterW - total) / 2;
+      ctx.font = bigFor(titleSize);
+      ctx.fillText(first.toUpperCase(), startX, cursorY + titleDrop);
+      if (mid) {
+        ctx.font = midFor(titleSize);
+        ctx.fillText(mid, startX + wF, cursorY);
       }
-      cursorY += ruleH;
+      if (last) {
+        ctx.font = bigFor(titleSize);
+        ctx.fillText(last.toUpperCase(), startX + wF + wM, cursorY + titleDrop);
+      }
+      ctx.textAlign = "center";
+      if (wM > 0) {
+        ctx.fillRect(Math.round(startX + wF), cursorY + ruleGap, Math.round(wM), ruleH);
+      }
+      cursorY += Math.max(ruleGap + ruleH, titleDrop);
     }
 
     // subtitle in letter-spaced small caps
