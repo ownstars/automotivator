@@ -34,6 +34,7 @@ header h1 {
   letter-spacing: 0.35em;
   text-transform: uppercase;
   font-weight: 400;
+  color: var(--accent);
 }
 
 .tagline {
