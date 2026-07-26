@@ -235,6 +235,7 @@
     // vertical layout
     const gapImgTitle = Math.round(posterW * 0.02);
     const ruleH = Math.max(2, Math.round(posterW / 320));
+    const ruleGap = Math.max(2, Math.round(titleSize * 0.05));
     const gapTitleSub = Math.round(posterW * 0.022);
     const padBottom = Math.round(posterW * 0.045);
 
@@ -287,9 +288,9 @@
       );
     }
 
-    // title: enlarged first/last letters with the smaller mid letters
-    // top-aligned to them, and the underline rule bottom-aligned to the
-    // big letters' baseline, so the block shares one top and bottom edge
+    // title: mid letters top-aligned with the enlarged first/last letters,
+    // underline tucked just beneath the mid letters, and the big letters
+    // reaching below it — like the original posters
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
     let cursorY = imgY + imgH + gapImgTitle;
@@ -304,13 +305,14 @@
       ctx.font = bigFor(titleSize);
       ctx.fillText(first.toUpperCase(), startX, bottomY);
       if (last) ctx.fillText(last.toUpperCase(), startX + wF + wM, bottomY);
+      const midBase = bottomY - bigAsc + midAsc;
       if (mid) {
         ctx.font = midFor(titleSize);
-        ctx.fillText(mid, startX + wF, bottomY - bigAsc + midAsc);
+        ctx.fillText(mid, startX + wF, midBase);
       }
       ctx.textAlign = "center";
       if (wM > 0) {
-        ctx.fillRect(Math.round(startX + wF), bottomY - ruleH, Math.round(wM), ruleH);
+        ctx.fillRect(Math.round(startX + wF), midBase + ruleGap, Math.round(wM), ruleH);
       }
       cursorY = bottomY;
     }
