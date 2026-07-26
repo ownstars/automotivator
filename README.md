@@ -29,6 +29,30 @@ python3 -m http.server 8000
   without hunting for a photo.
 - **PNG download** — filename derived from your title.
 
+## Poster style rules
+
+The renderer follows the classic demotivational-poster conventions, matched
+against an original reference:
+
+1. **Layout** — black background with thin margins (~1.6% of the poster
+   width) around the image; title and caption centered below; no white frame
+   by default (toggleable).
+2. **Title** — bold serif small caps in amber gold (`#f0c040`), scaled so the
+   full title spans ~78% of the poster width.
+3. **Enlarged flanking letters** — the first and last letters of the title
+   render larger than the middle letters.
+4. **Underline** — a rule in the title color runs under the middle letters
+   only, stopping short of the flanking letters. It sits just beneath the
+   middle letters (gap 6% of the title size, thickness 3.5%).
+5. **Shared edges** — the title block forms one rectangle: every letter
+   starts on the same top line, and the underline's bottom edge meets the
+   flanking letters' baseline. This constraint *derives* the flanking-letter
+   scale from measured font metrics
+   (`big cap height = mid cap height + rule gap + rule thickness`),
+   so the alignment holds for any title text and any font option.
+6. **Caption** — smaller small caps in light gray with wide letter-spacing
+   (0.12em), word-wrapped to the image width.
+
 ## Deploying to GitHub Pages
 
 The repo includes a workflow (`.github/workflows/pages.yml`) that publishes the
