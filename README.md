@@ -31,12 +31,13 @@ python3 -m http.server 8000
 
 ## Deploying to GitHub Pages
 
-The repo includes a workflow (`.github/workflows/pages.yml`) that deploys the
-site to GitHub Pages on every push to `main` (or manually via *Run workflow*).
+The repo includes a workflow (`.github/workflows/pages.yml`) that publishes the
+site files to the `gh-pages` branch on every push to `main` (or manually via
+*Run workflow*). GitHub Pages serves that branch, so the site is live at
+`https://<owner>.github.io/automotivator/`.
 
-One-time setup: in the repository settings, go to **Settings → Pages** and set
-**Source** to **GitHub Actions**. After the next push to `main`, the site will
-be live at `https://<owner>.github.io/automotivator/`.
+If Pages ever gets disabled, re-enable it under **Settings → Pages** with
+**Source: Deploy from a branch**, branch `gh-pages`, folder `/ (root)`.
 
 ## Files
 
