@@ -158,10 +158,10 @@
     return lines;
   }
 
-  function fitFontSize(text, family, targetSize, minSize, maxWidth) {
+  function fitFontSize(text, fontFor, targetSize, minSize, maxWidth) {
     let size = targetSize;
     while (size > minSize) {
-      ctx.font = `${size}px ${family}`;
+      ctx.font = fontFor(size);
       if (ctx.measureText(text).width <= maxWidth) break;
       size -= 2;
     }
@@ -179,8 +179,8 @@
     const subtitle = subtitleInput.value.trim();
 
     // layout metrics, all proportional to poster width
-    const padSide = Math.round(posterW * 0.09);
-    const padTop = Math.round(posterW * 0.075);
+    const padSide = Math.round(posterW * 0.03);
+    const padTop = Math.round(posterW * 0.025);
     const imgMaxW = posterW - padSide * 2;
     const imgMaxH = Math.round(posterW * 0.85);
 
@@ -193,28 +193,31 @@
       imgH = Math.round(image.height * scale);
     }
 
-    // title sizing (shrinks to fit on one line)
-    const titleTarget = Math.round(posterW / 10.5);
+    // title sizing (small-caps, shrinks to fit on one line)
+    const titleTarget = Math.round(posterW / 9.5);
     if (canvas.width !== posterW) canvas.width = posterW; // font measure needs a ctx
-    ctx.letterSpacing = "0.12em";
+    ctx.letterSpacing = "0.03em";
+    const titleFor = (s) => `small-caps ${s}px ${family}`;
     const titleSize = title
-      ? fitFontSize(title, family, titleTarget, Math.round(posterW / 26), imgMaxW)
+      ? fitFontSize(title, titleFor, titleTarget, Math.round(posterW / 26), imgMaxW - padSide * 2)
       : 0;
 
-    // subtitle wrapping
-    const subSize = Math.max(13, Math.round(posterW / 42));
-    ctx.letterSpacing = "0.02em";
-    ctx.font = `${subSize}px ${family}`;
-    const subLines = subtitle ? wrapText(subtitle, imgMaxW) : [];
-    const subLineH = Math.round(subSize * 1.45);
+    // subtitle wrapping (small-caps with wide tracking)
+    const subSize = Math.max(13, Math.round(posterW / 40));
+    ctx.letterSpacing = "0.08em";
+    ctx.font = `small-caps ${subSize}px ${family}`;
+    const subLines = subtitle ? wrapText(subtitle, imgMaxW - padSide * 2) : [];
+    const subLineH = Math.round(subSize * 1.5);
 
     // vertical layout
-    const gapImgTitle = Math.round(posterW * 0.045);
-    const gapTitleSub = Math.round(posterW * 0.018);
-    const padBottom = Math.round(posterW * 0.06);
+    const gapImgTitle = Math.round(posterW * 0.02);
+    const ruleGap = Math.round(posterW * 0.012);
+    const ruleH = Math.max(2, Math.round(posterW / 320));
+    const gapTitleSub = Math.round(posterW * 0.022);
+    const padBottom = Math.round(posterW * 0.045);
 
     let textBlockH = 0;
-    if (titleSize) textBlockH += titleSize;
+    if (titleSize) textBlockH += titleSize + ruleGap + ruleH;
     if (subLines.length) {
       if (titleSize) textBlockH += gapTitleSub;
       textBlockH += subLines.length * subLineH;
@@ -262,26 +265,30 @@
       );
     }
 
-    // title
+    // title with underline rule, both in the title color
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
     let cursorY = imgY + imgH + gapImgTitle;
     if (titleSize) {
       cursorY += titleSize;
-      ctx.letterSpacing = "0.12em";
-      ctx.font = `${titleSize}px ${family}`;
+      ctx.letterSpacing = "0.03em";
+      ctx.font = titleFor(titleSize);
       ctx.fillStyle = titleColor.value;
       // letter-spacing trails the last glyph; nudge left by half to re-center
-      const trail = titleSize * 0.06;
+      const trail = titleSize * 0.015;
       ctx.fillText(title, posterW / 2 - trail, cursorY);
+      const ruleW = Math.min(ctx.measureText(title).width, imgMaxW);
+      cursorY += ruleGap;
+      ctx.fillRect(Math.round((posterW - ruleW) / 2), cursorY, Math.round(ruleW), ruleH);
+      cursorY += ruleH;
     }
 
-    // subtitle
+    // subtitle in letter-spaced small caps
     if (subLines.length) {
       if (titleSize) cursorY += gapTitleSub;
-      ctx.letterSpacing = "0.02em";
-      ctx.font = `${subSize}px ${family}`;
-      ctx.fillStyle = "#d8d8d8";
+      ctx.letterSpacing = "0.08em";
+      ctx.font = `small-caps ${subSize}px ${family}`;
+      ctx.fillStyle = "#cccccc";
       for (const line of subLines) {
         cursorY += subLineH;
         ctx.fillText(line, posterW / 2, cursorY - (subLineH - subSize) / 2);
