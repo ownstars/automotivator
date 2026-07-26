@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Automotivator — Motivational Poster Generator</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;rect width='100' height='100' fill='black'/&gt;&lt;rect x='18' y='14' width='64' height='48' fill='none' stroke='white' stroke-width='3'/&gt;&lt;text x='50' y='86' font-size='20' fill='white' text-anchor='middle' font-family='serif'&gt;POSTER&lt;/text&gt;&lt;/svg&gt;">
+</head>
+<body>
+  <header>
+    <h1>Automotivator</h1>
+    <p class="tagline">Make your own motivational poster. Or demotivational — we don't judge.</p>
+  </header>
+
+  <main>
+    <section class="controls" aria-label="Poster controls">
+      <div id="drop-zone" class="drop-zone" tabindex="0" role="button"
+           aria-label="Upload an image by clicking, dropping a file, or pasting">
+        <div class="drop-zone-inner">
+          <strong>Drop an image here</strong>
+          <span>click to browse, or paste from clipboard</span>
+        </div>
+        <input type="file" id="file-input" accept="image/*" hidden>
+      </div>
+
+      <div class="field">
+        <label for="title-input">Title</label>
+        <input type="text" id="title-input" value="Motivation" maxlength="60"
+               placeholder="e.g. Persistence" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label for="subtitle-input">Caption</label>
+        <textarea id="subtitle-input" rows="5" maxlength="300"
+                  placeholder="A pithy line of wisdom goes here.">If a picture is worth a thousand words, a poster of a picture is worth at least a thousand and five.</textarea>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="title-color">Title color</label>
+          <select id="title-color">
+            <option value="#f0c040" selected>Gold</option>
+            <option value="#ffffff">White</option>
+            <option value="#e74c3c">Red</option>
+            <option value="#7ec8e3">Ice blue</option>
+            <option value="#8fd694">Green</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="title-font">Title font</label>
+          <select id="title-font">
+            <option value="serif" selected>Classic serif</option>
+            <option value="sans">Modern sans</option>
+            <option value="slab">Typewriter</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="poster-size">Poster size</label>
+          <select id="poster-size">
+            <option value="640">Small</option>
+            <option value="800" selected>Medium</option>
+            <option value="1100">Large</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <label class="checkbox">
+          <input type="checkbox" id="uppercase-toggle">
+          UPPERCASE title
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" id="border-toggle">
+          White frame around image
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="download-btn" class="primary">Download poster</button>
+        <button id="sample-btn" type="button">Try a sample image</button>
+      </div>
+    </section>
+
+    <section class="preview" aria-label="Poster preview">
+      <canvas id="poster-canvas" width="800" height="600"></canvas>
+    </section>
+  </main>
+
+  <footer>
+    <p>Everything happens in your browser — images are never uploaded anywhere.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
