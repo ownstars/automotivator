@@ -179,8 +179,8 @@
     const subtitle = subtitleInput.value.trim();
 
     // layout metrics, all proportional to poster width
-    const padSide = Math.round(posterW * 0.03);
-    const padTop = Math.round(posterW * 0.025);
+    const padSide = Math.round(posterW * 0.016);
+    const padTop = Math.round(posterW * 0.016);
     const imgMaxW = posterW - padSide * 2;
     const imgMaxH = Math.round(posterW * 0.85);
 
@@ -193,20 +193,25 @@
       imgH = Math.round(image.height * scale);
     }
 
-    // title sizing (small-caps, shrinks to fit on one line)
-    const titleTarget = Math.round(posterW / 9.5);
+    // title sizing: bold small-caps scaled to span ~78% of the poster width,
+    // like the classic posters, clamped so short titles don't become huge
     if (canvas.width !== posterW) canvas.width = posterW; // font measure needs a ctx
     ctx.letterSpacing = "0.03em";
-    const titleFor = (s) => `small-caps ${s}px ${family}`;
-    const titleSize = title
-      ? fitFontSize(title, titleFor, titleTarget, Math.round(posterW / 26), imgMaxW - padSide * 2)
-      : 0;
+    const titleFor = (s) => `small-caps bold ${s}px ${family}`;
+    let titleSize = 0;
+    if (title) {
+      ctx.font = titleFor(100);
+      const widthAt100 = ctx.measureText(title).width;
+      titleSize = Math.round((posterW * 0.78) / widthAt100 * 100);
+      titleSize = Math.max(Math.round(posterW / 26), Math.min(titleSize, Math.round(posterW / 6)));
+      titleSize = fitFontSize(title, titleFor, titleSize, Math.round(posterW / 26), imgMaxW);
+    }
 
     // subtitle wrapping (small-caps with wide tracking)
-    const subSize = Math.max(13, Math.round(posterW / 40));
-    ctx.letterSpacing = "0.08em";
+    const subSize = Math.max(13, Math.round(posterW / 38));
+    ctx.letterSpacing = "0.12em";
     ctx.font = `small-caps ${subSize}px ${family}`;
-    const subLines = subtitle ? wrapText(subtitle, imgMaxW - padSide * 2) : [];
+    const subLines = subtitle ? wrapText(subtitle, imgMaxW) : [];
     const subLineH = Math.round(subSize * 1.5);
 
     // vertical layout
@@ -286,7 +291,7 @@
     // subtitle in letter-spaced small caps
     if (subLines.length) {
       if (titleSize) cursorY += gapTitleSub;
-      ctx.letterSpacing = "0.08em";
+      ctx.letterSpacing = "0.12em";
       ctx.font = `small-caps ${subSize}px ${family}`;
       ctx.fillStyle = "#cccccc";
       for (const line of subLines) {
