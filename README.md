@@ -29,6 +29,15 @@ python3 -m http.server 8000
   without hunting for a photo.
 - **PNG download** — filename derived from your title.
 
+## Deploying to GitHub Pages
+
+The repo includes a workflow (`.github/workflows/pages.yml`) that deploys the
+site to GitHub Pages on every push to `main` (or manually via *Run workflow*).
+
+One-time setup: in the repository settings, go to **Settings → Pages** and set
+**Source** to **GitHub Actions**. After the next push to `main`, the site will
+be live at `https://<owner>.github.io/automotivator/`.
+
 ## Files
 
 | File         | Purpose                                  |
