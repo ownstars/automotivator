@@ -190,7 +190,7 @@
     if (canvas.width !== posterW) canvas.width = posterW; // font measure needs a ctx
     ctx.letterSpacing = "0.03em";
     const midFor = (s) => `small-caps bold ${s}px ${family}`;
-    const bigFor = (s) => `bold ${Math.round(s * 1.3)}px ${family}`;
+    const bigFor = (s) => `bold ${Math.round(s * 1.4)}px ${family}`;
     const splitTitle = () =>
       title.length <= 1
         ? [title, "", ""]
@@ -211,7 +211,19 @@
       titleSize = Math.max(minSize, Math.min(titleSize, Math.round(posterW / 6)));
       while (titleSize > minSize && measureTitle(titleSize).total > imgMaxW) titleSize -= 2;
     }
-    const titleDrop = Math.round(titleSize * 0.16);
+    // measured cap heights, so every letter shares one top line and the
+    // rule bottom meets the big letters' baseline exactly
+    let bigAsc = 0;
+    let midAsc = 0;
+    if (titleSize) {
+      const [first, mid] = splitTitle();
+      ctx.font = bigFor(titleSize);
+      bigAsc = Math.ceil(ctx.measureText(first.toUpperCase()).actualBoundingBoxAscent);
+      if (mid) {
+        ctx.font = midFor(titleSize);
+        midAsc = Math.ceil(ctx.measureText(mid).actualBoundingBoxAscent);
+      }
+    }
 
     // subtitle wrapping (small-caps with wide tracking)
     const subSize = Math.max(13, Math.round(posterW / 38));
@@ -222,13 +234,12 @@
 
     // vertical layout
     const gapImgTitle = Math.round(posterW * 0.02);
-    const ruleGap = Math.round(posterW * 0.012);
     const ruleH = Math.max(2, Math.round(posterW / 320));
     const gapTitleSub = Math.round(posterW * 0.022);
     const padBottom = Math.round(posterW * 0.045);
 
     let textBlockH = 0;
-    if (titleSize) textBlockH += titleSize + Math.max(ruleGap + ruleH, titleDrop);
+    if (titleSize) textBlockH += bigAsc;
     if (subLines.length) {
       if (titleSize) textBlockH += gapTitleSub;
       textBlockH += subLines.length * subLineH;
@@ -276,34 +287,32 @@
       );
     }
 
-    // title: enlarged first/last letters dropped below the baseline,
-    // underline rule tucked between them, all in the title color
+    // title: enlarged first/last letters with the smaller mid letters
+    // top-aligned to them, and the underline rule bottom-aligned to the
+    // big letters' baseline, so the block shares one top and bottom edge
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
     let cursorY = imgY + imgH + gapImgTitle;
     if (titleSize) {
-      cursorY += titleSize;
+      const bottomY = cursorY + bigAsc;
       ctx.letterSpacing = "0.03em";
       ctx.fillStyle = titleColor.value;
       const [first, mid, last] = splitTitle();
-      const { wF, wM, wL, total } = measureTitle(titleSize);
+      const { wF, wM, total } = measureTitle(titleSize);
       ctx.textAlign = "left";
       const startX = (posterW - total) / 2;
       ctx.font = bigFor(titleSize);
-      ctx.fillText(first.toUpperCase(), startX, cursorY + titleDrop);
+      ctx.fillText(first.toUpperCase(), startX, bottomY);
+      if (last) ctx.fillText(last.toUpperCase(), startX + wF + wM, bottomY);
       if (mid) {
         ctx.font = midFor(titleSize);
-        ctx.fillText(mid, startX + wF, cursorY);
-      }
-      if (last) {
-        ctx.font = bigFor(titleSize);
-        ctx.fillText(last.toUpperCase(), startX + wF + wM, cursorY + titleDrop);
+        ctx.fillText(mid, startX + wF, bottomY - bigAsc + midAsc);
       }
       ctx.textAlign = "center";
       if (wM > 0) {
-        ctx.fillRect(Math.round(startX + wF), cursorY + ruleGap, Math.round(wM), ruleH);
+        ctx.fillRect(Math.round(startX + wF), bottomY - ruleH, Math.round(wM), ruleH);
       }
-      cursorY += Math.max(ruleGap + ruleH, titleDrop);
+      cursorY = bottomY;
     }
 
     // subtitle in letter-spaced small caps
