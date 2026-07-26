@@ -282,9 +282,17 @@
       // letter-spacing trails the last glyph; nudge left by half to re-center
       const trail = titleSize * 0.015;
       ctx.fillText(title, posterW / 2 - trail, cursorY);
-      const ruleW = Math.min(ctx.measureText(title).width, imgMaxW);
+      // underline runs under the title but stops short of the
+      // first and last letters, like the classic posters
+      const fullW = Math.min(ctx.measureText(title).width, imgMaxW);
+      const firstW = ctx.measureText(title[0]).width;
+      const lastW = ctx.measureText(title[title.length - 1]).width;
+      const ruleW = fullW - firstW - lastW;
       cursorY += ruleGap;
-      ctx.fillRect(Math.round((posterW - ruleW) / 2), cursorY, Math.round(ruleW), ruleH);
+      if (ruleW > 0) {
+        const ruleX = posterW / 2 - trail - fullW / 2 + firstW;
+        ctx.fillRect(Math.round(ruleX), cursorY, Math.round(ruleW), ruleH);
+      }
       cursorY += ruleH;
     }
 
